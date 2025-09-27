@@ -14,14 +14,16 @@ class TestNarouEpisodeParser(TestCase):
             <p id="L2"><br /></p>
             <p id="L3"></p>
             <p id="L4">「段落4」</p>
-            <p id="L5">"段落5"</p>
-            <p id="L6">　　　　</p>
-            <p id="L7">    </p>
+            <p id="L5"></p>
+            <p id="L6">"段落6"</p>
+            <p id="L7">　　　　</p>
+            <p id="L8">    </p>
             """
         )
         self.assertEqual("タイトルA", parser.title)
         self.assertEqual(
-            ["　段落1", "「段落4」", "&quot;段落5&quot;"], parser.paragraphs
+            ["　段落1", "<br />", "「段落4」", "&quot;段落6&quot;", "<br />"],
+            parser.paragraphs,
         )
 
     def test_narou_episode_parser_ruby(self):

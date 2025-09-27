@@ -51,6 +51,7 @@ class NarouEpisodeParser(HTMLParser):
         self._paragraph_flg = False
         self._current_paragraph = ""
         self._paragraph_buff = ""
+        self._consecutive_blank_paragraphs = 0
 
     @property
     def title(self):
@@ -122,8 +123,14 @@ class NarouEpisodeParser(HTMLParser):
                 # 先頭の字下げを残すため rstrip にしている
                 paragraph = self._current_paragraph.rstrip()
                 if paragraph:
-                    # 空の段落は読み飛ばす
+                    self._consecutive_blank_paragraphs = 0
                     self.paragraphs.append(paragraph)
+                else:
+                    # 連続しない空行はそのまま除去
+                    # 2 回以上連続する空行は一つの空行として出力する
+                    self._consecutive_blank_paragraphs += 1
+                    if self._consecutive_blank_paragraphs == 2:
+                        self.paragraphs.append("<br />")
                 self._current_paragraph = ""
         # paragraph_flg
         if self._id_stack[-1] is not None and PARAGRAPH_ID_PATTERN.fullmatch(
