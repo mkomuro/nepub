@@ -79,7 +79,10 @@ class TestNarouEpisodeParser(TestCase):
         )
         self.assertEqual("タイトルＸ", parser.title)
         self.assertEqual(
-            ['今日は６月<span class="tcy">28</span>日です⁉', "This is a pen."],
+            [
+                '今日は６月<span class="tcy">28</span>日です<span class="tcy">⁉</span>',
+                "This is a pen.",
+            ],
             parser.paragraphs,
         )
 

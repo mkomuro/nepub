@@ -26,10 +26,10 @@ def tcy(text: str):
     text = text.replace("“", "〝").replace("”", "〟")
     # 連続する感嘆符・疑問符
     text = (
-        text.replace("！？", "⁉")
-        .replace("？！", "⁈")
-        .replace("！！", "‼")
-        .replace("？？", "⁇")
+        text.replace("！？", '<span class="tcy">⁉</span>')
+        .replace("？！", '<span class="tcy">⁈</span>')
+        .replace("！！", '<span class="tcy">‼</span>')
+        .replace("？？", '<span class="tcy">⁇</span>')
     )
     return text
 
