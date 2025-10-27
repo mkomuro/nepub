@@ -1,3 +1,8 @@
+import re
+
+RANGE_PATTERN = re.compile(r"[1-9][0-9]*(-[1-9][0-9]*)?(,[1-9][0-9]*(-[1-9][0-9]*)?)*")
+
+
 def half_to_full(c: str):
     return {
         "A": "Ａ",
@@ -68,3 +73,21 @@ def half_to_full(c: str):
         "?": "？",
         "%": "％",
     }[c]
+
+
+def range_to_episode_ids(my_range: str):
+    my_range = my_range.replace(" ", "")
+    if not RANGE_PATTERN.fullmatch(my_range):
+        raise Exception(f"range が想定しない形式です: {my_range}")
+    episode_ids: set[str] = set([])
+    for r in my_range.split(","):
+        if "-" in r:
+            start, end = r.split("-")
+            if int(end) > 10_000:
+                # 安全のため値が大きすぎる場合はエラーにする
+                raise Exception(f"range に含まれる値が大きすぎます: {end}")
+            for i in range(int(start), int(end) + 1):
+                episode_ids.add(str(i))
+        else:
+            episode_ids.add(r)
+    return episode_ids

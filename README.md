@@ -26,6 +26,9 @@ options:
   -h, --help            show this help message and exit
   -i, --illustration    Include illustrations
   -t, --tcy             Enable Tate-Chu-Yoko conversion
+  -r <range>, --range <range>
+                        Specify the target episode id range using comma-separated values (e.g., "1,2,3")
+                        or a range notation (e.g., "10-20").
   -o <file>, --output <file>
                         Output file name. If not specified, ${novel_id}.epub is used.
                         Update the file if it exists.

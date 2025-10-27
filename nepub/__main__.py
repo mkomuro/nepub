@@ -11,6 +11,7 @@ from nepub.epub import container, content, nav, style, text
 from nepub.http import get
 from nepub.parser import NarouEpisodeParser, NarouIndexParser
 from nepub.type import Episode, Image, Metadata, MetadataImage
+from nepub.util import range_to_episode_ids
 
 
 def main():
@@ -21,6 +22,13 @@ def main():
     )
     parser.add_argument(
         "-t", "--tcy", help="Enable Tate-Chu-Yoko conversion", action="store_true"
+    )
+    parser.add_argument(
+        "-r",
+        "--range",
+        metavar="<range>",
+        help='Specify the target episode id range using comma-separated values (e.g., "1,2,3") or a range notation (e.g., "10-20").',
+        type=str,
     )
     parser.add_argument(
         "-o",
@@ -34,10 +42,14 @@ def main():
         output = args.output
     else:
         output = f"{args.novel_id}.epub"
-    convert_narou_to_epub(args.novel_id, args.illustration, args.tcy, output)
+    convert_narou_to_epub(
+        args.novel_id, args.illustration, args.tcy, args.range, output
+    )
 
 
-def convert_narou_to_epub(novel_id: str, illustration: bool, tcy: bool, output: str):
+def convert_narou_to_epub(
+    novel_id: str, illustration: bool, tcy: bool, my_range: str, output: str
+):
     print(
         f"novel_id: {novel_id}, illustration: {illustration}, tcy: {tcy}, output: {output}"
     )
@@ -60,7 +72,7 @@ def convert_narou_to_epub(novel_id: str, illustration: bool, tcy: bool, output: 
     if metadata and metadata["novel_id"] != novel_id:
         # metadata の novel_id と値が異なる場合処理を中止する
         print(
-            f'Process stopped as the novel_id differs from metadata: {metadata["novel_id"]}'
+            f"Process stopped as the novel_id differs from metadata: {metadata['novel_id']}"
         )
         return
 
@@ -68,7 +80,7 @@ def convert_narou_to_epub(novel_id: str, illustration: bool, tcy: bool, output: 
     if metadata and metadata.get("illustration", False) != illustration:
         # metadata の illustration フラグと値が異なる場合処理を中止する
         print(
-            f'Process stopped as the illustration value differs from metadata: {metadata.get("illustration", False)}'
+            f"Process stopped as the illustration value differs from metadata: {metadata.get('illustration', False)}"
         )
         return
 
@@ -76,9 +88,13 @@ def convert_narou_to_epub(novel_id: str, illustration: bool, tcy: bool, output: 
     if metadata and metadata.get("tcy", False) != tcy:
         # metadata の tcy フラグと値が異なる場合処理を中止する
         print(
-            f'Process stopped as the tcy value differs from metadata: {metadata.get("tcy", False)}'
+            f"Process stopped as the tcy value differs from metadata: {metadata.get('tcy', False)}"
         )
         return
+
+    target_episode_ids: set[str] | None = None
+    if my_range:
+        target_episode_ids = range_to_episode_ids(my_range)
 
     # index
     index_parser = NarouIndexParser()
@@ -114,11 +130,21 @@ def convert_narou_to_epub(novel_id: str, illustration: bool, tcy: bool, output: 
     print(f"{len(episodes)} episodes found.")
     print("Start downloading...")
 
+    ignored_episode_ids: list[str] = []
     for i, episode in enumerate(episodes):
         if metadata:
             if episode["id"] in metadata["episodes"]:
                 metadata_episode = metadata["episodes"][episode["id"]]
                 if metadata_episode["id"] == episode["id"]:
+                    if (
+                        target_episode_ids is not None
+                        and episode["id"] not in target_episode_ids
+                    ):
+                        # 取得対象外で既存のファイルに存在しているエピソードはそのまま取り出す
+                        episode["title"] = metadata_episode["title"]
+                        new_metadata["episodes"][episode["id"]] = metadata_episode
+                        metadata_images += metadata_episode["images"]
+                        continue
                     if not max(episode["created_at"], episode["updated_at"]) > max(
                         metadata_episode["created_at"], metadata_episode["updated_at"]
                     ):
@@ -128,14 +154,17 @@ def convert_narou_to_epub(novel_id: str, illustration: bool, tcy: bool, output: 
                         metadata_images += metadata_episode["images"]
                         skipped_count += 1
                         print(
-                            f'Download skipped (already up to date) ({i + 1}/{len(episodes)}): https://ncode.syosetu.com/{novel_id}/{episode["id"]}/'
+                            f"Download skipped (already up to date) ({i + 1}/{len(episodes)}): https://ncode.syosetu.com/{novel_id}/{episode['id']}/"
                         )
                         continue
+        if target_episode_ids is not None and episode["id"] not in target_episode_ids:
+            ignored_episode_ids.append(episode["id"])
+            continue
         print(
-            f'Downloading ({i + 1}/{len(episodes)}): https://ncode.syosetu.com/{novel_id}/{episode["id"]}/'
+            f"Downloading ({i + 1}/{len(episodes)}): https://ncode.syosetu.com/{novel_id}/{episode['id']}/"
         )
         episode_parser.feed(
-            get(f'https://ncode.syosetu.com/{novel_id}/{episode["id"]}/')
+            get(f"https://ncode.syosetu.com/{novel_id}/{episode['id']}/")
         )
         downloaded_count += 1
         episode["title"] = episode_parser.title
@@ -159,6 +188,16 @@ def convert_narou_to_epub(novel_id: str, illustration: bool, tcy: bool, output: 
         episode_parser.reset()
         # 負荷かけないようにちょっと待つ
         time.sleep(1)
+    # 処理対象外かつ既存のファイルに存在しないエピソードを削除
+    episodes = [
+        episode for episode in episodes if episode["id"] not in ignored_episode_ids
+    ]
+    for chapter in chapters:
+        chapter["episodes"] = [
+            episode
+            for episode in chapter["episodes"]
+            if episode["id"] not in ignored_episode_ids
+        ]
 
     print(f"Download is complete! (new: {downloaded_count}, skipped: {skipped_count})")
 
@@ -175,11 +214,11 @@ def convert_narou_to_epub(novel_id: str, illustration: bool, tcy: bool, output: 
                 if image["id"] not in image_md5s:
                     image_md5s.add(image["id"])
                     unique_images.append(image)
-                    zf_new.writestr(f'src/image/{image["name"]}', image["data"])
+                    zf_new.writestr(f"src/image/{image['name']}", image["data"])
             for episode in episodes:
                 if episode["fetched"]:
                     zf_new.writestr(
-                        f'src/text/{episode["id"]}.xhtml',
+                        f"src/text/{episode['id']}.xhtml",
                         text(episode["title"], episode["paragraphs"]),
                     )
             if metadata:
@@ -189,16 +228,16 @@ def convert_narou_to_epub(novel_id: str, illustration: bool, tcy: bool, output: 
                             image_md5s.add(metadata_image["id"])
                             unique_images.append(metadata_image)
                             with zf_old.open(
-                                f'src/image/{metadata_image["name"]}'
+                                f"src/image/{metadata_image['name']}"
                             ) as f:
                                 zf_new.writestr(
-                                    f'src/image/{metadata_image["name"]}', f.read()
+                                    f"src/image/{metadata_image['name']}", f.read()
                                 )
                     for episode in episodes:
                         if not episode["fetched"]:
-                            with zf_old.open(f'src/text/{episode["id"]}.xhtml') as f:
+                            with zf_old.open(f"src/text/{episode['id']}.xhtml") as f:
                                 zf_new.writestr(
-                                    f'src/text/{episode["id"]}.xhtml', f.read()
+                                    f"src/text/{episode['id']}.xhtml", f.read()
                                 )
             zf_new.writestr("mimetype", "application/epub+zip")
             zf_new.writestr("META-INF/container.xml", container())
