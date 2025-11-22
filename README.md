@@ -20,6 +20,12 @@ pip install git+https://github.com/mkomuro/nepub.git
 ```sh
 pip install git+https://github.com/mkomuro/nepub.git@dev
 ```
+あるいは
+```sh
+git clone -b dev https://github.com/mkomuro/nepub.git nepub-dev
+pip install --no-cache-dir -e nepub-dev
+```
+
 
 ## Usage
 
