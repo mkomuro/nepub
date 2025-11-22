@@ -2,15 +2,23 @@
 
 「小説家になろう」の小説を縦書きの EPUB に変換するためのツール
 
+> [!NOTE]
+> こちらは自分用 (mkomuro) の開発／テスト版フォーク。
+
 ## Requirements
 
 * Python 3
-  * 3.10 で動作確認しています
+  * 3.12 ~~3.10~~ で動作確認しています
 
 ## Installation
-
+**main ブランチ:** なるべくフォーク元を維持する予定
 ```sh
-pip install git+https://github.com/ttk1/nepub.git
+pip install git+https://github.com/mkomuro/nepub.git
+```
+
+**dev ブランチ:** 自分用なので main にマージしないかもしれない
+```sh
+pip install git+https://github.com/mkomuro/nepub.git@dev
 ```
 
 ## Usage
@@ -52,6 +60,9 @@ Updated xxxx.epub.
 ※ xxxx の部分には小説ページの URL の末尾部分 (`https://ncode.syosetu.com/{ここの文字列}/`) に置き換えてください。
 
 ## 免責事項
+
+> [!NOTE]
+> 免責事項、ライセンスなどは、フォーク元のレポジトリと同様です。フォーク元と本レポジトリの同期がずれた場合でも（同期が遅れてしまった場合でも）基本的にはフォーク元に従うようにしますのでフォーク元のレポジトリも同時に参照してください。
 
 本ツールは、小説投稿サイト「小説家になろう」の小説を縦書きの EPUB に変換するための非公式ツールです。
 本ツールは株式会社ヒナプロジェクトとは一切関係がありません。
