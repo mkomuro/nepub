@@ -108,8 +108,9 @@ class NarouEpisodeParser(HTMLParser):
                 else:
                     # 連続しない空行はそのまま除去
                     # 2 回以上連続する空行は一つの空行として出力する
+                    # <dev> 変更: 空行が 2 行までの時は、その行数と同じ数だけ空行を入れる。
                     self._consecutive_blank_paragraphs += 1
-                    if self._consecutive_blank_paragraphs == 2:
+                    if self._consecutive_blank_paragraphs == 2 or self._consecutive_blank_paragraphs == 1:
                         self.paragraphs.append("<br />")
                 self._current_paragraph = ""
         # paragraph_flg
