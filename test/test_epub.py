@@ -19,11 +19,14 @@ class TestEpub(TestCase):
         <item media-type="application/xhtml+xml" id="nav" href="navigation.xhtml" properties="nav" />
         <item media-type="text/css" id="style" href="style.css" />
         <item media-type="application/json" id="metadata" href="metadata.json" />
+        <item media-type="image/jpeg" id="cimage" href="image/cover.jpg" properties="cover-image" />
+        <item media-type="application/xhtml+xml" id="cover-page" href="text/cover.xhtml" />
         <item media-type="application/xhtml+xml" id="001" href="text/001.xhtml" />
         <item media-type="application/xhtml+xml" id="002" href="text/002.xhtml" />
         <item media-type="image/jpeg" id="003" href="image/003.jpg" />
     </manifest>
     <spine page-progression-direction="rtl">
+        <itemref linear="yes" idref="cover-page" />
         <itemref linear="yes" idref="001" />
         <itemref linear="yes" idref="002" />
     </spine>
@@ -57,6 +60,7 @@ class TestEpub(TestCase):
                         "type": "image/jpeg",
                     }
                 ],
+                True
             ),
         )
 
@@ -73,6 +77,9 @@ class TestEpub(TestCase):
         <nav epub:type="toc">
             <h1>Navigation</h1>
             <ol>
+                <li>
+                    <a href="text/cover.xhtml">表紙</a>
+                </li>
                 <li>
                     <a href="text/001.xhtml">ちゃぷたー1</a>
                     <ol>
@@ -133,7 +140,8 @@ class TestEpub(TestCase):
                             }
                         ],
                     },
-                ]
+                ],
+                True
             ),
         )
 
@@ -183,7 +191,8 @@ class TestEpub(TestCase):
                             },
                         ],
                     }
-                ]
+                ],
+                False
             ),
         )
 

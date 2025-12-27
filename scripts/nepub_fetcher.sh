@@ -20,9 +20,7 @@ CSV ファイルの情報を読み込み、nepub を実行して EPUB ファイ�
 EOF
 }
 # ------------------------
-
-# -c: csv file name
-# -o: epub output folder name
+# 
 option_c_arg=""
 option_o_arg=""
 
@@ -30,12 +28,10 @@ while getopts ":hc:o:" opt; do
 case $opt in
         c)
             # -c オプションが指定された場合（引数あり）
-            # 引数は $OPTARG に格納される
             option_c_arg="$OPTARG"
             ;;
         o)
             # -o オプションが指定された場合（引数あり）
-            # 引数は $OPTARG に格納される
             option_o_arg="$OPTARG"
             ;;
         h)
@@ -87,20 +83,8 @@ if [ ! -f "$CSV_FILE" ]; then
     exit 1
 fi
 
-# 処理するCSV形式のデータ: 
-#   - "" の中にはスペースは入れない。
-#   - range は "x-y" の形式で指定する
-#   - 先頭に # をつけるとコメントアウト
-# 注)
-#   range は "x,y,z" 形式を使用しない。使用してもいいけど
-#   epubファイル名の一部に使用しているのでエラーになるかも。
-# -------- --------- -------
-# "小説ID","タイトル","range"
-#csv_data='
-##"n6316bn","［伏瀬］転スラ",""
-#"n7069gb","［源平氏］パズル_in_ダンジョン！","1-5"
-#"1177354054881165840","［土日　月］慎重勇者","1-6"
-#'
+# 処理するCSV形式のデータ:
+#   For more details, see nepub-dev/scripts/fetch-list_sample.csv.
 
 # CSVファイルからデータを読み込み、空行やコメント行をフィルタリングして処理する
 # また、grepで空行（またはコメント行）をフィルタリングする
@@ -114,22 +98,20 @@ cat "$CSV_FILE" | grep -v -e '^[[:space:]]*$' -e '^\s*#' | while IFS=, read -r c
     # "小説ID" の先頭がアルファベットで始まっている場合は「narou」
     if [[ "$param1" =~ ^[[:alpha:]] ]]; then
         # nepub コマンド (narou)
-        command_line="nepub -i -t"
+        command_line="nepub"
     else
         # nepub コマンド (kakuyomu)
-        command_line="nepub -k -t"
+        command_line="nepub -k"
     fi
 
-    # 3番目のカラム ($param3) が空文字列 "" でない場合に -r オプションを追加
+    # 3番目のカラム ($param3) が空文字列 "" でない場合に指定された nepub オプションを追加
     if [[ -n "$param3" ]]; then
-        command_line+=" -r \"$param3\""
-
-        # 出力ファイル名: "./nepub_data/タイトル_小説ID_range.epub"
-        output_file="${EPUB_DIR}${param2}_${param1}_r${param3}.epub"
-    else
-        # 出力ファイル名: "./nepub_data/タイトル_小説ID.epub"
-        output_file="${EPUB_DIR}${param2}_${param1}.epub"
+        command_line+=" $param3"
+        #command_line+=" -r \"$param3\""
     fi
+
+    # 出力ファイル名: "./nepub_data/タイトル_小説ID.epub"
+    output_file="${EPUB_DIR}${param2}_${param1}.epub"
 
     # 2番目のカラム ($param2) が空文字列 "" でない場合に -o オプションを追加
     if [[ -n "$param2" ]]; then
@@ -143,9 +125,7 @@ cat "$CSV_FILE" | grep -v -e '^[[:space:]]*$' -e '^\s*#' | while IFS=, read -r c
     echo "RUN> $command_line"
     # コマンドの実行
     eval $command_line
-
     chmod 644 ${output_file}
-    #echo "Waiting 5(s)..."; sleep 5
 done
 
 echo -e "\nAll tasks completed. The EPUB file(s) is in folder '${EPUB_DIR}'."

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2001/epub" xml:lang="ja">
+<head>
+    <meta charset="UTF-8" />
+    <title>{{ title }}</title>
+    <style type="text/css">
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
+        }
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            /* background-color: #ffffff; */
+        }
+        img.cimage {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain; /* Fit while maintaining aspect ratio */
+        }
+    </style>
+</head>
+<body>
+    <img class="cimage" src="../image/cover.jpg" alt="Title: {{ title }}, Author: {{ author }}" />
+</body>
+</html>

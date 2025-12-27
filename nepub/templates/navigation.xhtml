@@ -9,6 +9,11 @@
         <nav epub:type="toc">
             <h1>Navigation</h1>
             <ol>
+{%- if cover_page %}
+                <li>
+                    <a href="text/cover.xhtml">表紙</a>
+                </li>
+{%- endif %}
 {%- for chapter in chapters %}
 {%- if chapter.name == "default" %}
 {%- for episode in chapter.episodes %}

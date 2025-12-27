@@ -8,12 +8,14 @@ import zipfile
 from typing import List
 
 from nepub.epub import container, content, nav, style, text
+from nepub.epub import cover
 from nepub.http import get
 from nepub.parser.kakuyomu import KakuyomuEpisodeParser, KakuyomuIndexParser
 from nepub.parser.narou import NarouEpisodeParser, NarouIndexParser
 from nepub.type import Episode, Image, Metadata, MetadataImage
 from nepub.util import range_to_episode_nums
 
+from nepub.cover import CoverGenerator, CoverSizeDefaults
 
 def main():
     parser = argparse.ArgumentParser()
@@ -44,13 +46,22 @@ def main():
     parser.add_argument(
         "-k", "--kakuyomu", help="Use Kakuyomu as the source", action="store_true"
     )
+    parser.add_argument(
+        "-c", "--cover",
+        help="Insert a cover JPEG image in the EPUB file (optional: specify filename)",
+        nargs='?',          # 引数を0個または1個受け取る
+        const="cover.jpg",  # -c だけの時はこの値になる
+        default=None,       # 指定なしの時は None
+        metavar="<jpeg_file>"
+    )
+
     args = parser.parse_args()
     if args.output:
         output = args.output
     else:
         output = f"{args.novel_id}.epub"
     convert_narou_to_epub(
-        args.novel_id, args.illustration, args.tcy, args.range, output, args.kakuyomu
+        args.novel_id, args.illustration, args.tcy, args.range, output, args.kakuyomu, args.cover
     )
 
 
@@ -89,9 +100,13 @@ def convert_narou_to_epub(
     my_range: str,
     output: str,
     kakuyomu: bool,
+    cover_jpeg: str | None
 ):
     print(
         f"novel_id: {novel_id}, illustration: {illustration}, tcy: {tcy}, output: {output}, kakuyomu: {kakuyomu}"
+    )
+    print(
+        f"cover_jpeg: {cover_jpeg}"
     )
 
     # kakuyomu で illustration が指定されていたら処理を中止する
@@ -106,6 +121,7 @@ def convert_narou_to_epub(
         "kakuyomu": kakuyomu,
         "illustration": illustration,
         "tcy": tcy,
+        #"cover_jpeg": cover_jpeg,
         "episodes": {},
     }
     if os.path.exists(output):
@@ -145,6 +161,16 @@ def convert_narou_to_epub(
             f"Process stopped as the tcy value differs from metadata: {metadata.get('tcy', False)}"
         )
         return
+
+    '''
+    # check cover_jpeg
+    if metadata and metadata["cover_jpeg"] != cover_jpeg:
+        # metadata の cover_jpeg と値が異なる場合処理を中止する
+        print(
+            f"Process stopped as the cover_jpeg differs from metadata: {metadata['cover_jpeg']}"
+        )
+        return
+    '''
 
     target_episode_nums: set[str] | None = None
     if my_range:
@@ -298,9 +324,14 @@ def convert_narou_to_epub(
             zf_new.writestr("src/style.css", style())
             zf_new.writestr(
                 "src/content.opf",
-                content(title, author, timestamp, episodes, unique_images),
+                content(title, author, timestamp, episodes, unique_images, cover_jpeg is not None),
             )
-            zf_new.writestr("src/navigation.xhtml", nav(chapters))
+            zf_new.writestr("src/navigation.xhtml", nav(chapters, cover_jpeg is not None))
+            if cover_jpeg is not None:
+                zf_new.writestr("src/text/cover.xhtml", cover(title, author))
+                cover_gene = CoverGenerator(CoverSizeDefaults.A6)
+                cover_data = cover_gene.generate(title, author, cover_jpeg)
+                zf_new.writestr("src/image/cover.jpg", cover_data["data"])
             zf_new.writestr("src/metadata.json", json.dumps(new_metadata))
 
     if os.path.exists(output):

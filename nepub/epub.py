@@ -14,6 +14,7 @@ env = Environment(
 template_content = env.get_template("content.opf")
 template_navigation = env.get_template("navigation.xhtml")
 template_text = env.get_template("text.xhtml")
+template_cover_page = env.get_template("cover.xhtml")
 
 
 def content(
@@ -22,6 +23,7 @@ def content(
     timestamp: str,
     episodes: List[Episode],
     images: List[MetadataImage],
+    cover_page: bool = False
 ):
     return template_content.render(
         {
@@ -30,12 +32,13 @@ def content(
             "timestamp": timestamp,
             "episodes": episodes,
             "images": images,
+            "cover_page": cover_page
         }
     )
 
 
-def nav(chapters: List[Chapter]):
-    return template_navigation.render({"chapters": chapters})
+def nav(chapters: List[Chapter], cover_page: bool = False):
+    return template_navigation.render({"chapters": chapters, "cover_page": cover_page})
 
 
 def text(title: str, paragraphs: List[str]):
@@ -48,3 +51,7 @@ def container():
 
 def style():
     return resources.read_text("nepub.files", "style.css")
+
+
+def cover(title: str, author: str):
+    return template_cover_page.render({"title": title, "author": author})

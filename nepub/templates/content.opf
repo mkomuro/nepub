@@ -11,6 +11,10 @@
         <item media-type="application/xhtml+xml" id="nav" href="navigation.xhtml" properties="nav" />
         <item media-type="text/css" id="style" href="style.css" />
         <item media-type="application/json" id="metadata" href="metadata.json" />
+{%- if cover_page %}
+        <item media-type="image/jpeg" id="cimage" href="image/cover.jpg" properties="cover-image" />
+        <item media-type="application/xhtml+xml" id="cover-page" href="text/cover.xhtml" />
+{%- endif %}
 {%- for episode in episodes %}
         <item media-type="application/xhtml+xml" id="{{ episode.id }}" href="text/{{ episode.id }}.xhtml" />
 {%- endfor %}
@@ -19,6 +23,9 @@
 {%- endfor %}
     </manifest>
     <spine page-progression-direction="rtl">
+{%- if cover_page %}
+        <itemref linear="yes" idref="cover-page" />
+{%- endif %}
 {%- for episode in episodes %}
         <itemref linear="yes" idref="{{ episode.id }}" />
 {%- endfor %}

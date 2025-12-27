@@ -31,7 +31,7 @@ pip install --no-cache-dir -e nepub-dev
 
 ```sh
 $ nepub -h
-usage: nepub [-h] [-i] [-t] [-r <range>] [-o <file>] [-k] novel_id
+usage: nepub [-h] [-i] [-t] [-r <range>] [-o <file>] [-k] [-c [<jpeg_file>]] novel_id
 
 positional arguments:
   novel_id              novel id
@@ -47,6 +47,8 @@ options:
                         Output file name. If not specified, ${novel_id}.epub is used.
                         Update the file if it exists.
   -k, --kakuyomu        Use Kakuyomu as the source
+  -c [<jpeg_file>], --cover [<jpeg_file>]
+                        Insert a cover JPEG image in the EPUB file (optional: specify filename)
 ```
 
 Example:
@@ -54,6 +56,7 @@ Example:
 ```sh
 $ nepub xxxx
 novel_id: xxxx, illustration: False, tcy: False, output: xxxx.epub, kakuyomu: False
+cover_jpeg: None
 xxxx.epub found. Loading metadata for update.
 3 episodes found.
 Start downloading...
@@ -65,6 +68,38 @@ Updated xxxx.epub.
 ```
 
 ※ xxxx の部分には小説ページの URL の末尾部分 (`https://ncode.syosetu.com/{ここの文字列}/`) に置き換えてください。
+
+## 自分用 nepub の変更点 (Upstream との違い)
+### 連続する空行の処理
+空行が連続する場合の処理を変更しました。
+|自分用 (`dev`ブランチ)|Upstream 版 (`main`ブランチ)|
+|:-:|:-:|
+|1 行 &rarr; 1 行|1 行 &rarr; 削除|
+|2 行以上 &rarr; 2 行|2 行以上 &rarr; 1 行|
+### 表紙画像を挿入
+自分が使用している一部の EPUB ビューワーソフトが EPUB 本文に含まれている挿絵の画像ファイルをアイコン画像として「本棚」機能でサムネイル表示してしまうため、表紙画像を EPUB ファイルに挿入する機能を追加しました。
+
+`-c` オプションで下記のサンプル画像のような表紙を挿入します。（`-c` に続いてローカルパスにある「JPEG ファイル画像ファイル名」を指定するとそのファイルを表紙画像として EPUB ファイルに挿入します。）
+
+<!-- ![サンプルの表紙画像](./assets/size-A6-short-cover.jpg) -->
+<p align="center">
+<img src="./assets/size-A6-short-cover.jpg" alt="サンプルの表紙画像" width=40%>
+</p>
+
+上記のようなデフォルトの画像属性は以下になります。サイズなどの属性を変更する場合はコードを変更する必要があります。
+```sh
+# A6 (300dpi) 相当を期待したピクセル数
+$ file -b assets/size-A6-short-cover.jpg | tr ',' '\n'
+JPEG image data
+ JFIF standard 1.01
+ aspect ratio
+ density 1x1
+ segment length 16
+ baseline
+ precision 8
+ 1240x1748
+ components 3
+```
 
 ## 免責事項
 
