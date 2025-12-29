@@ -48,7 +48,7 @@ def main():
     )
     parser.add_argument(
         "-c", "--cover",
-        help="Insert a cover JPEG image in the EPUB file (optional: specify filename)",
+        help="Inserts a JPEG image cover into the EPUB file (optional: specify filename)",
         nargs='?',          # 引数を0個または1個受け取る
         const="cover.jpg",  # -c だけの時はこの値になる
         default=None,       # 指定なしの時は None
@@ -331,7 +331,7 @@ def convert_narou_to_epub(
                 zf_new.writestr("src/text/cover.xhtml", cover(title, author))
                 cover_gene = CoverGenerator(CoverSizeDefaults.A6)
                 cover_data = cover_gene.generate(title, author, cover_jpeg)
-                zf_new.writestr("src/image/cover.jpg", cover_data["data"])
+                zf_new.writestr(f"src/image/{cover_data['name']}", cover_data["data"])
             zf_new.writestr("src/metadata.json", json.dumps(new_metadata))
 
     if os.path.exists(output):
