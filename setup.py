@@ -13,7 +13,7 @@ entry_points = {"console_scripts": ["nepub = nepub.__main__:main"]}
 
 setup(
     name="nepub",
-    version="1.4.0.2",
+    version="1.4.0.3",
     description="Small tool to convert Narou and Kakuyomu novels to vertically written EPUBs.",
     long_description=readme,
     author="mkomuro",
