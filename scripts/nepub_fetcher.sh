@@ -99,19 +99,21 @@ cat "$CSV_FILE" | grep -v -e '^[[:space:]]*$' -e '^\s*#' | while IFS=, read -r c
     if [[ "$param1" =~ ^[[:alpha:]] ]]; then
         # nepub コマンド (narou)
         command_line="nepub"
+
+        # 出力ファイル名: "./epub_data/タイトル_小説ID.epub"
+        output_file="${EPUB_DIR}${param2}_${param1}.epub"
     else
         # nepub コマンド (kakuyomu)
         command_line="nepub -k"
+
+        # 出力ファイル名: "./epub_data/タイトル_kakuyomu.epub"
+        output_file="${EPUB_DIR}${param2}_kakuyomu.epub"
     fi
 
     # 3番目のカラム ($param3) が空文字列 "" でない場合に指定された nepub オプションを追加
     if [[ -n "$param3" ]]; then
         command_line+=" $param3"
-        #command_line+=" -r \"$param3\""
     fi
-
-    # 出力ファイル名: "./nepub_data/タイトル_小説ID.epub"
-    output_file="${EPUB_DIR}${param2}_${param1}.epub"
 
     # 2番目のカラム ($param2) が空文字列 "" でない場合に -o オプションを追加
     if [[ -n "$param2" ]]; then
