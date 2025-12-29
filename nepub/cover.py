@@ -34,7 +34,11 @@ class CoverSize:
 
     @classmethod
     def from_mm(cls, width_mm: float, height_mm: float, dpi: int = 300):
-        px = lambda mm: int(mm / 25.4 * dpi)
+        def px(mm):
+            v = int(mm / 25.4 * dpi)
+            v += 1 if v % 2 == 1 else 0   # ← 三項演算子で偶数化
+            return v
+
         return cls(width=px(width_mm), height=px(height_mm), dpi=dpi)
 
 
@@ -70,18 +74,22 @@ class CoverGenerator:
     # Public API
     # ------------------------------------------------------------
 
-    def generate(self, title: str, author: str, cover_jpeg: str) -> CoverImage:
+    def generate(self, title: str, author: str, user_cover_jpeg: str) -> CoverImage:
         """既存 JPEG があれば読み込み、なければ生成して返す"""
         print(
             f"Specified cover page size: W={self.img_size.width}, "
             f"H={self.img_size.height}, DPI={self.img_size.dpi}"
         )
 
-        if os.path.exists(cover_jpeg):
-            img_bytes = self._load_cover_jpeg(cover_jpeg)
+        if os.path.exists(user_cover_jpeg):
+            img_bytes = self._load_cover_jpeg(user_cover_jpeg)
         else:
             img_bytes = self._create_cover_jpeg(title, author)
 
+        '''
+          "name" は "cover.jpg" 固定。これは EPUB ファイル内の画僧ファイル名になる。
+          固定値以外にしたい場合は、content.opf、cover.xhtml ファイルを変更する必要がある。
+        '''
         return {
             "type": "image/jpg",
             "id": "cimage",
@@ -102,8 +110,8 @@ class CoverGenerator:
 
     def _create_cover_jpeg(self, title: str, author: str) -> bytes:
         """タイトルと作者名を描画した表紙画像を生成"""
-        title = self._truncate_text(title)
-        author = self._truncate_text(author)
+        title = self._truncate_text_full(title)
+        author = self._truncate_text_half(author)
 
         w, h = self.img_size.width, self.img_size.height
         img = PILImage.new("RGB", (w, h), color=self.BASE_COLOR)
@@ -155,9 +163,13 @@ class CoverGenerator:
     # Utility Methods
     # ------------------------------------------------------------
 
-    def _truncate_text(self, text: str) -> str:
+    def _truncate_text_full(self, text: str) -> str:
         """全角幅ベースで 72 文字相当までに制限"""
         return self._limit_east_asian_width(text, self.MAX_FULL_WIDTH)
+
+    def _truncate_text_half(self, text: str) -> str:
+        """全角幅ベースで 36 文字相当までに制限"""
+        return self._limit_east_asian_width(text, self.MAX_FULL_WIDTH / 2)
 
     def _limit_east_asian_width(self, text: str, max_width: int) -> str:
         """
@@ -201,9 +213,8 @@ class CoverGenerator:
     def _image_to_bytes(self, img: PILImage.Image) -> bytes:
         """PIL Image → JPEG bytes"""
         buf = BytesIO()
-        img.save(buf, format="JPEG")
-        buf.seek(0)
-        return buf.read()
+        img.save(buf, format="JPEG") #, dpi=(self.img_size.dpi, self.img_size.dpi))
+        return buf.getvalue()
 
 
 # ------------------------------------------------------------
@@ -211,27 +222,112 @@ class CoverGenerator:
 # ------------------------------------------------------------
 
 if __name__ == "__main__":
+    """
+    A6 サイズで生成:
+        python cover.py "吾輩は猫である" "夏目漱石" "cover.jpg" "A6"
+    B6 サイズで生成:
+        python cover.py "吾輩は猫である" "夏目漱石" "cover.jpg" "B6"
+            or
+        python -m nepub.cover ...
+
+    KINDLE サイズで生成:
+        python cover.py "タイトル" "著者名" "mycover.jpg" "KINDLE"
+
+    引数なし → test_cases 実行:
+        python cover.py
+    """
+    import sys
+
+    # --- サイズ名を CoverSizeDefaults から取得する小さなヘルパー ---
+    def resolve_size(size_name: str):
+        try:
+            return getattr(CoverSizeDefaults, size_name)
+        except AttributeError:
+            valid = ", ".join([attr for attr in dir(CoverSizeDefaults) if not attr.startswith("_")])
+            raise ValueError(f"不正なサイズ名です: {size_name}\n利用可能なサイズ: {valid}")
+
+    # --- 引数なしの場合のテストケース ---
     test_cases = [
-        ("これは非常に長い小説のタイトルで画像幅を超えてしまう場合のテストです",
-         "作者：すごく名前が長い作者名のテスト",
-         CoverSizeDefaults.A6, "A6-long"),
-        ("小説のタイトル名",
-         "小説の作者名",
-         CoverSizeDefaults.A6, "A6-short"),
-        ("１２３４５６７８９Ａ１２３４５６７８９Ｂ１２３４５６７８９Ｃ１２３４５６７８９Ｄ１２３４５６７８９Ｅ１２３４５６７８９Ｆ１２３４５６７８９Ｇあいうえおかきくけこ",
-         "作者：すごく名前が長い作者名のテスト",
-         CoverSizeDefaults.KINDLE, "KINDLE-very-long1"),
-        ("１２３４５６７８９Ａ112233445566778899Ｂ１２３４５６７８９Ｃ１２３４５６７８９Ｄ１２３４５６７８９Ｅ１２３４５６７８９Ｆ１２３４５６７８９Ｇ0あいうえおかきくけこ",
-         "作者：すごく名前が長い作者名のテスト",
-         CoverSizeDefaults.KINDLE, "KINDLE-very-long2"),
+        (
+            "小説のタイトル名（Ａ６）",
+            "小説の作者名",
+            CoverSizeDefaults.A6,
+            "A6-short"
+        ),
+        (
+            "これは非常に長い小説のタイトルで画像幅を超えてしまう場合のテストです。",
+            "すごく名前が長い作者名のテスト",
+            CoverSizeDefaults.A6,
+            "A6-long"
+        ),
+        (
+            "小説のタイトル名（Ｂ６）",
+            "小説の作者名",
+            CoverSizeDefaults.B6,
+            "B6-short"
+        ),
+        (
+            ("あいうえおかきくけこさＡ"
+             "あいうえおかきくけこさＢ"
+             "あいうえおかきくけこさＣ"
+             "あいうえおかきくけこさＤ"
+             "あいうえおかきくけこさＥ"
+             "あいうえおかきくけこさＦあいうえお"
+            ),
+            ("寿限無、寿限無、五劫のす"
+             "りきれ、海砂利水魚の、水"
+             "行末・（略）長久命の長助"
+            ),
+            CoverSizeDefaults.KINDLE,
+            "KINDLE-very-long"
+         ),
     ]
 
-    for title, author, size, label in test_cases:
+    # --- 引数解析 ---
+    args = sys.argv[1:]
+
+    # ------------------------------------------------------------
+    # 引数なし → test_cases を実行
+    # ------------------------------------------------------------
+    if len(args) == 0:
+        print("引数が無いため test_cases を実行します")
+
+        for title, author, size, label in test_cases:
+            generator = CoverGenerator(size)
+            cover = generator.generate(title, author, "cover.jpg")
+
+            file_path = f"size-{label}-{cover['name']}"
+            with open(file_path, "wb") as f:
+                f.write(cover["data"])
+
+            print(f"Saved: {file_path}")
+
+    # ------------------------------------------------------------
+    # 引数4つ → (title, author, output_filename, size_name)
+    # ------------------------------------------------------------
+    elif len(args) == 4:
+        title, author, output_filename, size_name = args
+
+        try:
+            size = resolve_size(size_name)
+        except ValueError as e:
+            print(e)
+            print("使い方: python cover.py \"タイトル\" \"著者名\" \"出力ファイル名\" \"サイズ名\"")
+            sys.exit(1)
+
         generator = CoverGenerator(size)
         cover = generator.generate(title, author, "cover.jpg")
 
-        file_path = f"size-{label}-{cover['name']}"
-        with open(file_path, "wb") as f:
+        with open(output_filename, "wb") as f:
             f.write(cover["data"])
 
-        print(f"Saved: {file_path}")
+        print(f"Saved: {output_filename}")
+
+    # ------------------------------------------------------------
+    # 引数の数が不正
+    # ------------------------------------------------------------
+    else:
+        print("引数の数が正しくありません。")
+        print("使い方: python cover.py \"タイトル\" \"著者名\" \"出力ファイル名\" \"サイズ名\"")
+        print("または: python -m nepub.cover \"タイトル\" \"著者名\" \"出力ファイル名\" \"サイズ名\"")
+
