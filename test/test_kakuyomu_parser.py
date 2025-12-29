@@ -21,7 +21,7 @@ class TestKakuyomuEpisodeParser(TestCase):
         )
         self.assertEqual("タイトルA", parser.title)
         self.assertEqual(
-            ["　段落1", "<br />", "「段落4」", "&quot;段落6&quot;", "<br />"],
+            ["　段落1", "<br />", "<br />", "「段落4」", "<br />", "&quot;段落6&quot;", "<br />", "<br />"],
             parser.paragraphs,
         )
 
