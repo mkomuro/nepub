@@ -94,7 +94,7 @@ nepub -i -t -c <novel_id>
 <img src="./assets/size-A6-short-cover.jpg" alt="サンプルの表紙画像" style="width: 40%; height: auto;">
 </p>
 
-加えて、`-c` に続いてローカルパスにある「JPEG 画像ファイル名」を指定すると、そのファイルを表紙画像として EPUB ファイルに挿入します。
+また、`-c` に続いてローカルパスにある「JPEG 画像ファイル名」を指定すると、上記の自動画像生成の代わりに、パラメータで指定されたファイルを表紙画像として EPUB ファイルに挿入します。
 ```sh
 nepub -i -t -c <jpeg_file> <novel_id>
 ```
@@ -102,17 +102,59 @@ nepub -i -t -c <jpeg_file> <novel_id>
 生成されるデフォルトの JPEG 表紙画像には、以下の属性が設定されています。画像サイズなどの属性を変更したい場合は、コード側の修正が必要です。
 ```sh
 # A6 (300dpi) 相当を期待したピクセル数
-$ file -b size-A6-short-cover.jpg | tr ',' '\n'
-JPEG image data
- JFIF standard 1.01
- aspect ratio
- density 1x1
- segment length 16
- baseline
- precision 8
- 1240x1748
- components 3
+$ exiftool size-A6-short-cover.jpg
+ExifTool Version Number         : 12.76
+File Name                       : size-A6-short-cover.jpg
+Directory                       : .
+File Size                       : 75 kB
+File Modification Date/Time     : 2025:12:30 19:56:31+09:00
+File Access Date/Time           : 2025:12:30 19:57:02+09:00
+File Inode Change Date/Time     : 2025:12:30 19:56:31+09:00
+File Permissions                : -rw-r--r--
+File Type                       : JPEG
+File Type Extension             : jpg
+MIME Type                       : image/jpeg
+JFIF Version                    : 1.01
+Resolution Unit                 : inches
+X Resolution                    : 300
+Y Resolution                    : 300
+Exif Byte Order                 : Big-endian (Motorola, MM)
+Image Description               : Web novel cover image for nepub
+Software                        : nepub
+Modify Date                     : 2025:12:30 19:56:31
+Artist                          : nepub/dev
+Copyright                       : Copyright (c) 2025 mkomuro
+Date/Time Original              : 2025:12:30 19:56:31
+Create Date                     : 2025:12:30 19:56:31
+User Comment                    : 小説タイトル：小説のタイトル名（Ａ６）／著者：小説の作者名
+Image Width                     : 1240
+Image Height                    : 1748
+Encoding Process                : Baseline DCT, Huffman coding
+Bits Per Sample                 : 8
+Color Components                : 3
+Y Cb Cr Sub Sampling            : YCbCr4:2:0 (2 2)
+Image Size                      : 1240x1748
+Megapixels                      : 2.2
 ```
+
+<!--
+$ file -b size-A6-short-cover.jpg | sed 's/, /\n - /g'
+JPEG image data
+ - JFIF standard 1.01
+ - resolution (DPI)
+ - density 300x300
+ - segment length 16
+ - Exif Standard: [TIFF image data
+ - big-endian
+ - direntries=6
+ - description=Web novel cover image for nepub
+ - software=nepub
+ - datetime=2025:12:30 19:56:31]
+ - baseline
+ - precision 8
+ - 1240x1748
+ - components 3
+-->
 
 #### 任意の「タイトル名」と「作者名」を埋め込んだ表紙画像の生成
 任意の「小説タイトル」や「作者名」を埋め込んだ JPEG 表紙画像を、事前に生成することができます。以下は、上記のサンプルと同じ JPEG 表紙画像を生成する際のコマンド例です。

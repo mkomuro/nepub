@@ -4,9 +4,12 @@ import os
 import textwrap
 import unicodedata
 from io import BytesIO
+from datetime import datetime
 from dataclasses import dataclass
 
+import piexif
 from PIL import Image as PILImage, ImageDraw as PILImageDraw, ImageFont as PILImageFont
+
 from nepub.type import Image as CoverImage
 
 
@@ -35,9 +38,9 @@ class CoverSize:
     @classmethod
     def from_mm(cls, width_mm: float, height_mm: float, dpi: int = 300):
         def px(mm):
-            v = int(mm / 25.4 * dpi)
-            v += 1 if v % 2 == 1 else 0   # ← 三項演算子で偶数化
-            return v
+            v_px = int(mm / 25.4 * dpi)
+            v_px += 1 if v_px % 2 == 1 else 0   # ← 三項演算子で偶数化
+            return v_px
 
         return cls(width=px(width_mm), height=px(height_mm), dpi=dpi)
 
@@ -106,7 +109,7 @@ class CoverGenerator:
         with PILImage.open(path) as img:
             if img.mode != "RGB":
                 img = img.convert("RGB")
-            return self._image_to_bytes(img)
+            return self._image_to_bytes_with_jpeg_metadata(img)
 
     def _create_cover_jpeg(self, title: str, author: str) -> bytes:
         """タイトルと作者名を描画した表紙画像を生成"""
@@ -157,7 +160,16 @@ class CoverGenerator:
             spacing=self.AUTHOR_SPACING,
         )
 
-        return self._image_to_bytes(img)
+        # UserComment のみ ASCII 以外を受け付ける
+        meta = {
+            "ImageDescription": "Web novel cover image for nepub",
+            "Artist": "N/A",
+            "Copyright": "Copyright (c) 2025 mkomuro",
+            "Software": "nepub",
+            "UserComment": f"小説タイトル：{title}／著者：{author}",
+        }
+
+        return self._image_to_bytes_with_jpeg_metadata(img, jpeg_metadata=meta)
 
     # ------------------------------------------------------------
     # Utility Methods
@@ -210,10 +222,105 @@ class CoverGenerator:
             return PILImageFont.truetype(self.FONT_PATH, font_size)
         return PILImageFont.load_default()
 
-    def _image_to_bytes(self, img: PILImage.Image) -> bytes:
-        """PIL Image → JPEG bytes"""
+    def _make_exif_user_comment(self, text: str) -> bytes:
+        """
+        EXIF 2.3: https://www.cipa.jp/std/documents/j/DC-008-2012_J.pdf
+
+        表 9 文字コードと文字コード欄記入方法:
+            | 文字コード |           コード記入方法 (8Bytes)             |   リファレンス    |
+            |-----------+----------------------------------------------+------------------+
+            |   ASCII   |41.H, 53.H, 43.H, 49.H, 49.H, 00.H, 00.H, 00.H|  ITU-T T.50 IA5  |
+            |    JIS    |4A.H, 49.H, 53.H, 00.H, 00.H, 00.H, 00.H, 00.H|  JIS X0208-1990  |
+            |  Unicode  |55.H, 4E.H, 49.H, 43.H, 4F.H, 44.H, 45.H, 00.H| Unicode Standard |
+            | Undefined |00.H, 00.H, 00.H, 00.H, 00.H, 00.H, 00.H, 00.H|    Undefined     |
+
+        EXIF 3.0: CIPA DC-008-2024 (https://www.cipa.jp/j/std/std-sec.html)
+
+        表 4 文字コードと文字コード欄記入方法:
+            |           |                          |      準拠規格 / 参照先       |
+            | 文字コード |    識別コード (8Bytes)    |  符号化方式   |   文字集合   |
+            |-----------+--------------------------+-----------------------------+
+            |   ASCII   |41.53.43.49. 49.00.00.00.H|      ANSI INCITS 4[17]      |
+            |    JIS    |4A.49.53.00. 00.00.00.00.H|ISO-2022-JP[5]| JIS 漢字[6]  |
+            |  Unicode  |55.4E.49.43. 4F.44.45.00.H|   UTF-8[22]  | Unicode[21]  |
+            | Undefined |00.00.00.00. 00.00.00.00.H|      -       |       -      |
+
+        上記の表によれば UserComment に入れる文字列の先頭 8 バイトは "Unicode\0" を
+        指定しなければならない。しかし、"UNICODE\x00" を指定しないと Linux、Windows の
+        いずれの場合も正しく表示されないため、実際には実装依存のようだ。
+        尚、EXIF では UTF-8 ではなく UTF-16 へエンコードしておく方が良いようだ。
+        """
+        prefix = b"UNICODE\x00"
+        return prefix + text.encode("utf-16-be")
+
+    def _image_to_bytes_with_jpeg_metadata(
+        self,
+        img: PILImage.Image,
+        jpeg_metadata: dict | None = None,
+    ) -> bytes:
+        """
+        PIL Image → JPEG bytes
+        jpeg_metadata=None の場合は EXIF も DPI も埋め込まない
+        jpeg_metadata が dict の場合のみ EXIF + DPI を埋め込む
+
+        jpeg_metadata = {
+            "ImageDescription": "Web novel cover image for nepub",
+            "Artist": "N/A",
+            "Copyright": "Copyright (c) 2025 mkomuro",
+            "Software": "nepub",
+            "UserComment": f"小説タイトル：{title}／著者：{author}",
+        }
+        """
+
+        # jpeg_metadata が None → EXIF なし、DPI なし
+        if jpeg_metadata is None:
+            buf = BytesIO()
+            img.save(buf, format="JPEG")  # DPI も EXIF も付けない
+            return buf.getvalue()
+
+        # --- jpeg_metadata がある場合のみ EXIF を構築 ---
+        exif_dict = {"0th": {}, "Exif": {}, "GPS": {}, "1st": {}}
+
+        # 1. ユーザー指定メタデータ
+        if "ImageDescription" in jpeg_metadata:
+            exif_dict["0th"][piexif.ImageIFD.ImageDescription] = jpeg_metadata["ImageDescription"]
+
+        if "Artist" in jpeg_metadata:
+            exif_dict["0th"][piexif.ImageIFD.Artist] = jpeg_metadata["Artist"]
+
+        if "Copyright" in jpeg_metadata:
+            exif_dict["0th"][piexif.ImageIFD.Copyright] = jpeg_metadata["Copyright"]
+
+        if "Software" in jpeg_metadata:
+            exif_dict["0th"][piexif.ImageIFD.Software] = jpeg_metadata["Software"]
+
+        # UserComment のみ 日本語 OK (他は ASCII)
+        if "UserComment" in jpeg_metadata:
+            user_comment = self._make_exif_user_comment(jpeg_metadata["UserComment"])
+            exif_dict["Exif"][piexif.ExifIFD.UserComment] = user_comment
+
+        # 2. 自動付与メタデータ（作成日時 + 固定 author）
+        now = datetime.now().strftime("%Y:%m:%d %H:%M:%S")
+        exif_dict["0th"][piexif.ImageIFD.DateTime] = now
+        exif_dict["Exif"][piexif.ExifIFD.DateTimeOriginal] = now
+        exif_dict["Exif"][piexif.ExifIFD.DateTimeDigitized] = now
+
+        # 固定 author を埋め込む（ユーザー指定 Artist より優先, ASCII のみ）
+        FIXED_AUTHOR = "nepub/dev"
+        exif_dict["0th"][piexif.ImageIFD.Artist] = FIXED_AUTHOR
+
+        # EXIF バイナリ化
+        exif_bytes = piexif.dump(exif_dict)
+
+        # --- JPEG 保存（jpeg_metadata がある場合のみ DPI を付ける） ---
         buf = BytesIO()
-        img.save(buf, format="JPEG") #, dpi=(self.img_size.dpi, self.img_size.dpi))
+        img.save(
+            buf,
+            format="JPEG",
+            dpi=(self.img_size.dpi, self.img_size.dpi),
+            exif=exif_bytes,
+        )
+
         return buf.getvalue()
 
 
