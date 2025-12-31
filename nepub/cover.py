@@ -67,8 +67,20 @@ class CoverGenerator:
     TITLE_SPACING = 20
     AUTHOR_SPACING = 10
 
-    BASE_COLOR = (203, 185, 148)
-    TEXT_COLOR = (51, 46, 37)
+    # --- 色テーマの定義 ---
+    # (背景色, 文字・枠線色) のタプル
+    COLOR_THEMES = {
+        "brown": ((203, 185, 148), (51, 46, 37)),
+        "red":   ((230, 200, 200), (120, 40, 40)),
+        "green": ((200, 230, 200), (40, 100, 40)),
+        "blue":  ((200, 215, 230), (40, 60, 120)),
+        "gray":  ((192, 192, 192), (60, 60, 60)),
+        "BROWN": ((51, 46, 37), (203, 185, 148),),
+        "RED":   ((120, 40, 40), (230, 200, 200)),
+        "GREEN": ((40, 100, 40), (200, 230, 200)),
+        "BLUE":  ((40, 60, 120), (200, 215, 230)),
+        "GRAY":  ((60, 60, 60), (192, 192, 192)),
+    }
 
     def __init__(self, img_size: CoverSize = CoverSizeDefaults.A6):
         self.img_size = img_size
@@ -77,17 +89,20 @@ class CoverGenerator:
     # Public API
     # ------------------------------------------------------------
 
-    def generate(self, title: str, author: str, user_cover_jpeg: str) -> CoverImage:
-        """既存 JPEG があれば読み込み、なければ生成して返す"""
-        print(
-            f"Specified cover page size: W={self.img_size.width}, "
-            f"H={self.img_size.height}, DPI={self.img_size.dpi}"
-        )
+    def generate(self, title: str, author: str, user_cover_jpeg: str, theme: str = "brown") -> CoverImage:
+        """既存 JPEG があれば読み込み、なければ指定した色のテーマで生成して返す"""
 
         if os.path.exists(user_cover_jpeg):
             img_bytes = self._load_cover_jpeg(user_cover_jpeg)
+            print(f"Loaded a user-specified JPEG image: '{user_cover_jpeg}'.")
         else:
-            img_bytes = self._create_cover_jpeg(title, author)
+            print(
+                f"Specified cover page size: W={self.img_size.width}, "
+                f"H={self.img_size.height}, DPI={self.img_size.dpi}"
+            )
+            # テーマ名に基づいて色を取得（存在しない場合は brown を使用）
+            base_color, text_color = self.COLOR_THEMES.get(theme, self.COLOR_THEMES["brown"])
+            img_bytes = self._generate_cover_jpeg(title, author, base_color, text_color)
 
         '''
           "name" は "cover.jpg" 固定。これは EPUB ファイル内の画僧ファイル名になる。
@@ -111,24 +126,25 @@ class CoverGenerator:
                 img = img.convert("RGB")
             return self._image_to_bytes_with_jpeg_metadata(img)
 
-    def _create_cover_jpeg(self, title: str, author: str) -> bytes:
+    def _generate_cover_jpeg(self, title: str, author: str, base_color: tuple, text_color: tuple) -> bytes:
         """タイトルと作者名を描画した表紙画像を生成"""
         title = self._truncate_text_full(title)
         author = self._truncate_text_half(author)
 
         w, h = self.img_size.width, self.img_size.height
-        img = PILImage.new("RGB", (w, h), color=self.BASE_COLOR)
+        img = PILImage.new("RGB", (w, h), color=base_color)
         draw = PILImageDraw.Draw(img)
 
         font = self._load_font(w)
         frame_width = int(w * self.FRAME_RATIO)
+        border_width = int(w * self.FRAME_RATIO * 0.25) # was 15
 
         # フレーム描画
         draw.rectangle(
             [frame_width, frame_width, w - frame_width, h - frame_width],
-            fill=self.BASE_COLOR,
-            outline=self.TEXT_COLOR,
-            width=15,
+            fill=base_color,
+            outline=text_color,
+            width=border_width,
         )
 
         # テキスト折り返し
@@ -143,7 +159,7 @@ class CoverGenerator:
         draw.multiline_text(
             (center_x, title_y),
             wrapped_title,
-            fill=self.TEXT_COLOR,
+            fill=text_color,
             font=font,
             anchor="mm",
             align="center",
@@ -153,7 +169,7 @@ class CoverGenerator:
         draw.multiline_text(
             (center_x, author_y),
             wrapped_author,
-            fill=self.TEXT_COLOR,
+            fill=text_color,
             font=font,
             anchor="mm",
             align="center",
@@ -359,19 +375,73 @@ if __name__ == "__main__":
             "小説のタイトル名（Ａ６）",
             "小説の作者名",
             CoverSizeDefaults.A6,
-            "A6-short"
+            "A6-short",
+            "brown"
         ),
         (
-            "これは非常に長い小説のタイトルで画像幅を超えてしまう場合のテストです。",
+            "小説のタイトル名（Ａ６）",
+            "小説の作者名",
+            CoverSizeDefaults.A6,
+            "A6-short-r",
+            "BROWN"
+        ),
+        (
+            ("これは非常に長い小説のタ"
+             "イトルで画像幅を超えてし"
+             "まう場合のテストです。（"
+             "Ａ６）"
+            ),
             "すごく名前が長い作者名のテスト",
             CoverSizeDefaults.A6,
-            "A6-long"
+            "A6-long",
+            "red"
+        ),
+        (
+            ("これは非常に長い小説のタ"
+             "イトルで画像幅を超えてし"
+             "まう場合のテストです。（"
+             "Ａ６）"
+            ),
+            "すごく名前が長い作者名のテスト",
+            CoverSizeDefaults.A6,
+            "A6-long-r",
+            "RED"
         ),
         (
             "小説のタイトル名（Ｂ６）",
             "小説の作者名",
             CoverSizeDefaults.B6,
-            "B6-short"
+            "B6-short",
+            "green"
+        ),
+        (
+            "小説のタイトル名（Ｂ６）",
+            "小説の作者名",
+            CoverSizeDefaults.B6,
+            "B6-short-r",
+            "GREEN"
+        ),
+        (
+            ("これは非常に長い小説のタ"
+             "イトルで画像幅を超えてし"
+             "まう場合のテストです。（"
+             "Ｂ６）"
+            ),
+            "すごく名前が長い作者名のテスト",
+            CoverSizeDefaults.B6,
+            "B6-long",
+            "blue"
+        ),
+        (
+            ("これは非常に長い小説のタ"
+             "イトルで画像幅を超えてし"
+             "まう場合のテストです。（"
+             "Ｂ６）"
+            ),
+            "すごく名前が長い作者名のテスト",
+            CoverSizeDefaults.B6,
+            "B6-long-r",
+            "BLUE"
         ),
         (
             ("あいうえおかきくけこさＡ"
@@ -386,7 +456,24 @@ if __name__ == "__main__":
              "行末・（略）長久命の長助"
             ),
             CoverSizeDefaults.KINDLE,
-            "KINDLE-very-long"
+            "KINDLE-very-long",
+            "gray"
+         ),
+        (
+            ("あいうえおかきくけこさＡ"
+             "あいうえおかきくけこさＢ"
+             "あいうえおかきくけこさＣ"
+             "あいうえおかきくけこさＤ"
+             "あいうえおかきくけこさＥ"
+             "あいうえおかきくけこさＦあいうえお"
+            ),
+            ("寿限無、寿限無、五劫のす"
+             "りきれ、海砂利水魚の、水"
+             "行末・（略）長久命の長助"
+            ),
+            CoverSizeDefaults.KINDLE,
+            "KINDLE-very-long-r",
+            "GRAY"
          ),
     ]
 
@@ -399,9 +486,9 @@ if __name__ == "__main__":
     if len(args) == 0:
         print("引数が無いため test_cases を実行します")
 
-        for title, author, size, label in test_cases:
+        for title, author, size, label, color_theme in test_cases:
             generator = CoverGenerator(size)
-            cover = generator.generate(title, author, "cover.jpg")
+            cover = generator.generate(title, author, "cover.jpg", theme = color_theme)
 
             file_path = f"size-{label}-{cover['name']}"
             with open(file_path, "wb") as f:
@@ -412,18 +499,18 @@ if __name__ == "__main__":
     # ------------------------------------------------------------
     # 引数4つ → (title, author, output_filename, size_name)
     # ------------------------------------------------------------
-    elif len(args) == 4:
-        title, author, output_filename, size_name = args
+    elif len(args) == 5:
+        title, author, output_filename, size_name, color_theme = args
 
         try:
             size = resolve_size(size_name)
         except ValueError as e:
             print(e)
-            print("使い方: python cover.py \"タイトル\" \"著者名\" \"出力ファイル名\" \"サイズ名\"")
+            print("使い方: python cover.py \"タイトル\" \"著者名\" \"出力ファイル名\" \"サイズ名\" \"色テーマ\"")
             sys.exit(1)
 
         generator = CoverGenerator(size)
-        cover = generator.generate(title, author, "cover.jpg")
+        cover = generator.generate(title, author, "cover.jpg", theme = color_theme)
 
         with open(output_filename, "wb") as f:
             f.write(cover["data"])
@@ -435,6 +522,6 @@ if __name__ == "__main__":
     # ------------------------------------------------------------
     else:
         print("引数の数が正しくありません。")
-        print("使い方: python cover.py \"タイトル\" \"著者名\" \"出力ファイル名\" \"サイズ名\"")
-        print("または: python -m nepub.cover \"タイトル\" \"著者名\" \"出力ファイル名\" \"サイズ名\"")
+        print("使い方: python cover.py \"タイトル\" \"著者名\" \"出力ファイル名\" \"サイズ名\" \"色テーマ\"")
+        print("または: python -m nepub.cover \"タイトル\" \"著者名\" \"出力ファイル名\" \"サイズ名\" \"色テーマ\"")
 

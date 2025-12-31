@@ -99,7 +99,7 @@ nepub -i -t -c <novel_id>
 nepub -i -t -c <jpeg_file> <novel_id>
 ```
 
-生成されるデフォルトの JPEG 表紙画像には、以下の属性が設定されています。画像サイズなどの属性を変更したい場合は、コード側の修正が必要です。
+生成されるデフォルトの JPEG 表紙画像には、以下の属性が設定されています。画像サイズなどの属性を変更したい場合は、cover.py ソースコードの修正が必要です。
 ```sh
 # A6 (300dpi) 相当を期待したピクセル数
 $ exiftool size-A6-short-cover.jpg
@@ -159,23 +159,36 @@ JPEG image data
 #### 任意の「タイトル名」と「作者名」を埋め込んだ表紙画像の生成
 任意の「小説タイトル」や「作者名」を埋め込んだ JPEG 表紙画像を、事前に生成することができます。以下は、上記のサンプルと同じ JPEG 表紙画像を生成する際のコマンド例です。
 ```sh
-# nepub.cover "novel_title" "novel_author" "jpeg_filename" "A6 | B6 | KINDLE"
-#   A6 (文庫 = 1:1.41)
-#       width:   1240 = (105mm / 25.4) * 300dpi
-#       height:  1748 = (148mm / 25.4) * 300dpi
-#   B6 (単行本 = 1:1.42)
-#       width:   1512 = (128mm / 25.4) * 300dpi
-#       height:  2150 = (182mm / 25.4) * 300dpi
-#   KINDLE (1:1.41): https://kdp.amazon.co.jp/ja_JP/help/topic/G6GTK3T3NUHKLEFX
-#       width:   1816 px
-#       height:  2560 px
+# nepub.cover "novel_title" "novel_author" "jpeg_filename" \
+#   "A6 | B6 | KINDLE" \
+#   "brown | red | green | blue | gray"
+#
+# サイズ: (W,H)ピクセル数 = (<長さ>mm / 25.4mm) * 300dpi
+#   A6: (W,H) = 約(1240, 1748)px, 文庫本相当(105mm:148mm = 1:1.41)
+#   B6: (W,H) = 約(1512, 2150)px, 単行本相当(128mm:182mm = 1:1.42)
+#   KINDLE: (W,H) = (1816, 2560)px, (1:1.41)
+#     [Note] https://kdp.amazon.co.jp/ja_JP/help/topic/G6GTK3T3NUHKLEFX
+#
+# 色テーマ:
+#   brown: 茶色系の画像（デフォルト色）、
+#   red: 赤系、green: 緑系、blue: 青系、gray: グレー系
+#
 
 python -m nepub.cover \
     "小説のタイトル名" \
     "小説の作者名" \
     "size-A6-short-cover.jpg" \
-    "A6"
+    "A6" \
+    "brown"
 ```
+色テーマ見本：
+|色テーマ（淡色）|背景色|文字色|色テーマ（反転）|背景色|文字色|
+|:-:|:-:|:-:|:-:|:-:|:-:|
+|`brown`|<div style="background-color:rgb(203, 185, 148);">　　　　</div>|<div style="background-color:rgb(51, 46, 37);">　　　　</div>|`BROWN`|<div style="background-color:rgb(51, 46, 37);">　　　　</div>|<div style="background-color:rgb(203, 185, 148);">　　　　</div>|
+|`red`|<div style="background-color:rgb(230, 200, 200);">　　　　</div>|<div style="background-color:rgb(120, 40, 40);">　　　　</div>|`RED`|<div style="background-color:rgb(120, 40, 40);">　　　　</div>|<div style="background-color:rgb(230, 200, 200);">　　　　</div>|
+|`green`|<div style="background-color:rgb(200, 230, 200);">　　　　</div>|<div style="background-color:rgb(40, 100, 40);">　　　　</div>|`GREEN`|<div style="background-color:rgb(40, 100, 40);">　　　　</div>|<div style="background-color:rgb(200, 230, 200);">　　　　</div>|
+|`blue`|<div style="background-color:rgb(200, 215, 230);">　　　　</div>|<div style="background-color:rgb(40, 60, 120);">　　　　</div>|`BLUE`|<div style="background-color:rgb(40, 60, 120);">　　　　</div>|<div style="background-color:rgb(200, 215, 230);">　　　　</div>|
+|`gray`|<div style="background-color:rgb(192, 192, 192);">　　　　</div>|<div style="background-color:rgb(60, 60, 60);">　　　　</div>|`GRAY`|<div style="background-color:rgb(60, 60, 60);">　　　　</div>|<div style="background-color:rgb(192, 192, 192);">　　　　</div>|
 
 生成した JPEG 表紙画像を `-c` オプションの引数として指定すると、その画像が EPUB ファイルの表紙として挿入されます。
 ```sh
