@@ -11,7 +11,7 @@ CSV ファイルの情報を読み込み、nepub を実行して EPUB ファイ�
 オプション:
   -c CSV_filename        入力 CSV ファイル名を指定します。
                          未指定の場合、'./fetch_list_sample.csv' を使用します。
-  -o output_epub_folder_name
+  -d output_epub_folder_name
                          EPUBファイルの出力先フォルダ名を指定します。
                          未指定の場合、'./epub_data/' を使用します。
                          フォルダが存在しない場合は作成されます。
@@ -22,17 +22,17 @@ EOF
 # ------------------------
 # 
 option_c_arg=""
-option_o_arg=""
+option_d_arg=""
 
-while getopts ":hc:o:" opt; do
+while getopts ":hc:d:" opt; do
 case $opt in
         c)
             # -c オプションが指定された場合（引数あり）
             option_c_arg="$OPTARG"
             ;;
-        o)
-            # -o オプションが指定された場合（引数あり）
-            option_o_arg="$OPTARG"
+        d)
+            # -d オプションが指定された場合（引数あり）
+            option_d_arg="$OPTARG"
             ;;
         h)
             # -h オプションが指定された場合（ヘルプ表示）
@@ -54,34 +54,42 @@ case $opt in
     esac
 done
 
-# Data directory path (Do not forget adding the last '/')
-if [ -z "$option_o_arg" ]; then
-    EPUB_DIR=./epub_data/
-else
-    EPUB_DIR="$option_o_arg"
-    # Add '/' if the last character does not end with '/'.
-    if [[ "$EPUB_DIR" != */ ]]; then
-        EPUB_DIR="${EPUB_DIR}/"
-    fi
-fi
-
-# If EPUB_DIR doesn't exist, create the direcory.
-if [ ! -d ${EPUB_DIR} ]; then
-    mkdir -p ${EPUB_DIR}
-fi
-
-# Get the CSV file name
+# 入力 CSV ファイルのパス名
 if [ -z "$option_c_arg" ]; then
     CSV_FILE=./fetch-list_sample.csv
 else
     CSV_FILE="$option_c_arg"
 fi
 
-# --- CSVファイルの読み込みと処理 ---
 if [ ! -f "$CSV_FILE" ]; then
     echo "Error: The specified CSV file '$CSV_FILE' cannot be found." >&2
     exit 1
 fi
+
+# 入力 CSV ファイルの改行コードが CRLF だとエラーになるので事前に検出する
+if grep -q $'\r' "$CSV_FILE"; then
+    echo "Error: Windows style line endings (CRLF) detected in '$CSV_FILE'."
+    echo "Please convert it to Linux format (LF)."
+    exit 1
+fi
+
+# EPUB ファイルの出力先フォルダのパス名 (Do not forget adding the last '/')
+if [ -z "$option_d_arg" ]; then
+    EPUB_DIR=./epub_data/
+else
+    EPUB_DIR="$option_d_arg"
+    # Add '/' if the last character does not end with '/'.
+    if [[ "$EPUB_DIR" != */ ]]; then
+        EPUB_DIR="${EPUB_DIR}/"
+    fi
+fi
+
+# EPUB_DIR フォルダが存在しない場合は作成する
+if [ ! -d ${EPUB_DIR} ]; then
+    mkdir -p ${EPUB_DIR}
+fi
+
+# --- CSVファイルの読み込みと処理 ---
 
 # 処理するCSV形式のデータ:
 #   For more details, see nepub-dev/scripts/fetch-list_sample.csv.
