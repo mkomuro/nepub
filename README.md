@@ -89,8 +89,8 @@ Updated xxxx.epub.
 #### 1. `-c` オプション
 
 ```sh
-# -c [<jpeg_file>], --cover [<jpeg_file>]
-#     Insert a cover JPEG image in the EPUB file (optional: specify filename)
+#  -c                    Inserts a generated JPEG image into the EPUB file as a cover page (named 
+#                        'cover.jpg' with the 'brown' color theme).
 
 nepub -i -t -c <novel_id>
 ```
@@ -163,6 +163,10 @@ JPEG image data
 
 また、`-c` の代わりに `--cover` を用いて `<color_theme>` を指定すれば、自動生成される画像の色をプリセットされた「色テーマ」から選択できます。
 ```sh
+#  --cover <jpeg_file> or <color_theme>
+#                        Inserts the specified JPEG image (or specified <color_theme> JPEG image) 
+#                        into the EPUB file as a cover page.
+
 nepub -i -t --cover <color_theme> <novel_id>
 ```
 
@@ -245,6 +249,10 @@ nepub -i -t --cover <color_theme> <novel_id>
 
 `--cover` オプションで「JPEG画像ファイル名」を指定すると、画像の自動生成は行われず、指定したファイルが表紙として EPUB に挿入されます。
 ```sh
+#  --cover <jpeg_file> or <color_theme>
+#                        Inserts the specified JPEG image (or specified <color_theme> JPEG image) 
+#                        into the EPUB file as a cover page.
+
 nepub -i -t --cover <jpeg_file> <novel_id>
 ```
 
