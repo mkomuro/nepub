@@ -4,6 +4,7 @@ import os
 import textwrap
 import unicodedata
 from io import BytesIO
+from typing import Final
 from datetime import datetime
 from dataclasses import dataclass
 
@@ -69,21 +70,26 @@ class CoverGenerator:
 
     # --- 色テーマの定義 ---
     # (背景色, 文字・枠線色) のタプル
-    COLOR_THEMES = {
-        "brown": ((203, 185, 148), (51, 46, 37)),
-        "red":   ((230, 200, 200), (120, 40, 40)),
-        "green": ((200, 230, 200), (40, 100, 40)),
-        "blue":  ((200, 215, 230), (40, 60, 120)),
-        "gray":  ((192, 192, 192), (60, 60, 60)),
-        "BROWN": ((51, 46, 37), (203, 185, 148),),
-        "RED":   ((120, 40, 40), (230, 200, 200)),
-        "GREEN": ((40, 100, 40), (200, 230, 200)),
-        "BLUE":  ((40, 60, 120), (200, 215, 230)),
-        "GRAY":  ((60, 60, 60), (192, 192, 192)),
+    COLOR_THEMES: Final = {
+        "brown": ((203, 185, 148), ( 51,  46,  37)),
+        "red":   ((230, 200, 200), (120,  40,  40)),
+        "green": ((200, 230, 200), ( 40, 100,  40)),
+        "blue":  ((200, 215, 230), ( 40,  60, 120)),
+        "gray":  ((192, 192, 192), ( 60,  60,  60)),
+        "BROWN": (( 51,  46,  37), (203, 185, 148)),
+        "RED":   ((120,  40,  40), (230, 200, 200)),
+        "GREEN": (( 40, 100,  40), (200, 230, 200)),
+        "BLUE":  (( 40,  60, 120), (200, 215, 230)),
+        "GRAY":  (( 60,  60,  60), (192, 192, 192)),
     }
 
     def __init__(self, img_size: CoverSize = CoverSizeDefaults.A6):
         self.img_size = img_size
+
+    @classmethod
+    def validate_color_theme(cls, theme_name):
+        """-c のバリデーション（色テーマ名が存在するかチェック）"""
+        return theme_name if cls.COLOR_THEMES.get(theme_name) else None
 
     # ------------------------------------------------------------
     # Public API

@@ -19,6 +19,7 @@ from nepub.cover import CoverGenerator, CoverSizeDefaults
 
 def main():
     parser = argparse.ArgumentParser()
+    parser_group = parser.add_mutually_exclusive_group()
     parser.add_argument("novel_id", help="novel id", type=str)
     parser.add_argument(
         "-i",
@@ -46,13 +47,20 @@ def main():
     parser.add_argument(
         "-k", "--kakuyomu", help="Use Kakuyomu as the source", action="store_true"
     )
-    parser.add_argument(
-        "-c", "--cover",
-        help="Inserts a JPEG image cover into the EPUB file (optional: specify filename)",
-        nargs='?',          # 引数を0個または1個受け取る
-        const="cover.jpg",  # -c だけの時はこの値になる
-        default=None,       # 指定なしの時は None
-        metavar="<jpeg_file>"
+
+    # -c と --cover は排他
+    parser_group.add_argument(
+        "-c", 
+        help="Inserts a generated JPEG image into the EPUB file as a cover page (named 'cover.jpg' with the 'brown' color theme).",
+        action='store_true',
+        dest='cover_flag',
+    )
+    parser_group.add_argument(
+        '--cover',
+        metavar='<jpeg_file> or <color_theme>',
+        help='Inserts the specified JPEG image (or specified <color_theme> JPEG image) into the EPUB file as a cover page.',
+        dest='cover_file',
+        type=str,
     )
 
     args = parser.parse_args()
@@ -60,8 +68,24 @@ def main():
         output = args.output
     else:
         output = f"{args.novel_id}.epub"
+
+    if args.cover_file:
+        cover_color = CoverGenerator.validate_color_theme(args.cover_file)
+        if cover_color is not None:
+            # Specified color theme such as "brown", "red"...
+            cover_jpeg_w_theme = ("cover.jpg", cover_color)
+        elif args.cover_file.lower().endswith(('.jpg', '.jpeg')):
+            # Specified filename with JPEG suffix.
+            cover_jpeg_w_theme = (args.cover_file, "brown")
+        else:
+            parser.error(f"argument --cover: '{args.cover_file}' は不正な <jpeg_file> 拡張子、または、<color_theme> です。")
+    elif args.cover_flag:
+        cover_jpeg_w_theme = ("cover.jpg", "brown")
+    else:
+        cover_jpeg_w_theme = None
+
     convert_narou_to_epub(
-        args.novel_id, args.illustration, args.tcy, args.range, output, args.kakuyomu, args.cover
+        args.novel_id, args.illustration, args.tcy, args.range, output, args.kakuyomu, cover_jpeg_w_theme
     )
 
 
@@ -100,7 +124,7 @@ def convert_narou_to_epub(
     my_range: str,
     output: str,
     kakuyomu: bool,
-    cover_jpeg: str | None
+    cover_jpeg: tuple | None
 ):
     print(
         f"novel_id: {novel_id}, illustration: {illustration}, tcy: {tcy}, output: {output}, kakuyomu: {kakuyomu}"
@@ -121,7 +145,7 @@ def convert_narou_to_epub(
         "kakuyomu": kakuyomu,
         "illustration": illustration,
         "tcy": tcy,
-        #"cover_jpeg": cover_jpeg,
+        "cover_jpeg": cover_jpeg,
         "episodes": {},
     }
     if os.path.exists(output):
@@ -162,15 +186,14 @@ def convert_narou_to_epub(
         )
         return
 
-    '''
     # check cover_jpeg
-    if metadata and metadata["cover_jpeg"] != cover_jpeg:
-        # metadata の cover_jpeg と値が異なる場合処理を中止する
-        print(
-            f"Process stopped as the cover_jpeg differs from metadata: {metadata['cover_jpeg']}"
-        )
-        return
-    '''
+    if metadata and metadata["cover_jpeg"] is not None:
+        if tuple(metadata["cover_jpeg"]) != cover_jpeg:
+            # metadata の cover_jpeg と値が異なる場合処理を中止する
+            print(
+                f"Process stopped as the cover_jpeg differs from metadata: {metadata['cover_jpeg']}"
+            )
+            return
 
     target_episode_nums: set[str] | None = None
     if my_range:
@@ -330,7 +353,8 @@ def convert_narou_to_epub(
             if cover_jpeg is not None:
                 zf_new.writestr("src/text/cover.xhtml", cover(title, author))
                 cover_gene = CoverGenerator(CoverSizeDefaults.A6)
-                cover_data = cover_gene.generate(title, author, cover_jpeg)
+                user_jpeg, user_color = cover_jpeg
+                cover_data = cover_gene.generate(title, author, user_jpeg, theme = user_color)
                 zf_new.writestr(f"src/image/{cover_data['name']}", cover_data["data"])
             zf_new.writestr("src/metadata.json", json.dumps(new_metadata))
 
