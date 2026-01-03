@@ -167,6 +167,10 @@ nepub -i -t --cover <color_theme> <novel_id>
 ```
 
 色テーマ見本： `brown` が上記のデフォルト色です。（ `-c` 指定時と同じ色）
+
+![色テーマ見本](./assets/color_theme_table.png)
+
+<!--
 <style>
   .color-theme-swatch {
     display: inline-block;
@@ -235,6 +239,7 @@ nepub -i -t --cover <color_theme> <novel_id>
     </tr>
   </tbody>
 </table>
+-->
 
 #### 3. `--cover <jpeg_file>` オプション
 
