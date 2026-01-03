@@ -186,6 +186,7 @@ def convert_narou_to_epub(
         )
         return
 
+    '''
     # check cover_jpeg
     if metadata and metadata["cover_jpeg"] is not None:
         if tuple(metadata["cover_jpeg"]) != cover_jpeg:
@@ -194,6 +195,7 @@ def convert_narou_to_epub(
                 f"Process stopped as the cover_jpeg differs from metadata: {metadata['cover_jpeg']}"
             )
             return
+    '''
 
     target_episode_nums: set[str] | None = None
     if my_range:
