@@ -85,8 +85,11 @@ else
 fi
 
 # EPUB_DIR フォルダが存在しない場合は作成する
-if [ ! -d ${EPUB_DIR} ]; then
-    mkdir -p ${EPUB_DIR}
+if [ ! -d ${EPUB_DIR}/n ]; then
+    mkdir -p ${EPUB_DIR}/n
+fi
+if [ ! -d ${EPUB_DIR}/k ]; then
+    mkdir -p ${EPUB_DIR}/n
 fi
 
 # --- CSVファイルの読み込みと処理 ---
@@ -107,15 +110,17 @@ cat "$CSV_FILE" | grep -v -e '^[[:space:]]*$' -e '^\s*#' | while IFS=, read -r c
     if [[ "$param1" =~ ^[[:alpha:]] ]]; then
         # nepub コマンド (narou)
         command_line="nepub -i -t"
+        sub_folder=n/
 
         # 出力ファイル名: "./epub_data/タイトル_小説ID.epub"
-        output_file="${EPUB_DIR}${param2}_${param1}.epub"
+        output_file="${EPUB_DIR}${sub_folder}${param2}_${param1}.epub"
     else
         # nepub コマンド (kakuyomu)
         command_line="nepub -k -t"
+        sub_folder=k/
 
         # 出力ファイル名: "./epub_data/タイトル_kakuyomu.epub"
-        output_file="${EPUB_DIR}${param2}_kakuyomu.epub"
+        output_file="${EPUB_DIR}${sub_folder}${param2}_kakuyomu.epub"
     fi
 
     # 3番目のカラム ($param3) が空文字列 "" でない場合に指定された nepub オプションを追加
