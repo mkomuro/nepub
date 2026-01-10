@@ -77,10 +77,10 @@ Updated xxxx.epub.
 
 ### 【仕様変更１】連続する空行の処理
 空行が連続する場合の処理を変更しました。
-|mkomuro/nepub (`dev`ブランチ)|Upstream 版 (`main`ブランチ)|
-|:-:|:-:|
-|1 行 &rarr; 1 行|1 行 &rarr; 削除|
-|2 行以上 &rarr; 2 行|2 行以上 &rarr; 1 行|
+| mkomuro/nepub (`dev`ブランチ) | Upstream 版 (`main`ブランチ) |
+| :---------------------------: | :--------------------------: |
+|       1 行 &rarr; 1 行        |       1 行 &rarr; 削除       |
+|     2 行以上 &rarr; 2 行      |     2 行以上 &rarr; 1 行     |
 
 ### 【機能追加１】表紙画像を挿入
 自分が使用している一部の EPUB ビューワーソフトが EPUB 本文に含まれている挿絵の画像ファイルをアイコン画像として「本棚」機能でサムネイル表示してしまうため、表紙画像を EPUB ファイルに挿入する機能を追加しました。
@@ -170,9 +170,17 @@ JPEG image data
 nepub -i -t --cover <color_theme> <novel_id>
 ```
 
-色テーマ見本： `brown` が上記のデフォルト色です。（ `-c` 指定時と同じ色）
+**色テーマ見本**： `brown` が上記サンプル表紙画像のデフォルト色です。（ `-c` 指定時と同じ色）
 
-![色テーマ見本](./assets/color_theme_table.png)
+|色テーマ（淡色）|背景色, 文字色 (RGB)|色テーマ（反転）|背景色, 文字色 (RGB)|
+|:-:|:-:|:-:|:--:|
+|`brown`|![色テーマ:brown](./assets/brown_1.png)|`BROWN`|![色テーマ:BROWN](./assets/brown_2.png)|
+|`red`  |![色テーマ:red](./assets/red_1.png)    |`RED`  |![色テーマ:RED](./assets/red_2.png)|
+|`green`|![色テーマ:green](./assets/green_1.png)|`GREEN`|![色テーマ:GREEN](./assets/green_2.png)|
+|`blue` |![色テーマ:blue](./assets/blue_1.png)  |`BLUE` |![色テーマ:BLUE](./assets/blue_2.png)|
+|`gray` |![色テーマ:gray](./assets/gray_1.png)  |`GRAY` |![色テーマ:GRAY](./assets/gray_2.png)|
+
+<!-- ![色テーマ見本](./assets/color_theme_table.png) -->
 
 <!--
 <style>
@@ -195,7 +203,7 @@ nepub -i -t --cover <color_theme> <novel_id>
       <th>色テーマ（淡色）</th>
       <th>背景色, 文字色 (RGB)</th>
       <th>色テーマ（反転）</th>
-      <th>背景色, 文字色  (RGB)</th>
+      <th>背景色, 文字色 (RGB)</th>
     </tr>
   </thead>
   <tbody>
