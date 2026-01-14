@@ -25,7 +25,7 @@ def main():
         action="store_true",
     )
     parser.add_argument(
-        "-t", "--tcy", help="Enable Tate-Chu-Yoko conversion", action="store_true"
+        "--no-tcy", help="Disable Tate-Chu-Yoko conversion", action="store_true"
     )
     parser.add_argument(
         "-r",
@@ -50,7 +50,12 @@ def main():
     else:
         output = f"{args.novel_id}.epub"
     convert_narou_to_epub(
-        args.novel_id, args.illustration, args.tcy, args.range, output, args.kakuyomu
+        args.novel_id,
+        args.illustration,
+        not args.no_tcy,
+        args.range,
+        output,
+        args.kakuyomu,
     )
 
 
