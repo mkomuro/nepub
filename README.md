@@ -31,7 +31,7 @@ pip install --no-cache-dir -e nepub-dev
 
 ```sh
 $ nepub -h
-usage: nepub [-h] [-i] [-t] [-r <range>] [-o <file>] [-k] [-c [<jpeg_file>]] novel_id
+usage: nepub [-h] [-i] [--no-tcy] [-r <range>] [-o <file>] [-k] [-c [<jpeg_file>]] novel_id
 
 positional arguments:
   novel_id              novel id
@@ -39,7 +39,7 @@ positional arguments:
 options:
   -h, --help            show this help message and exit
   -i, --illustration    Include illustrations (Narou only)
-  -t, --tcy             Enable Tate-Chu-Yoko conversion
+  --no-tcy              Disable Tate-Chu-Yoko conversion
   -r <range>, --range <range>
                         Specify the target episode number range using
                         comma-separated values (e.g., "1,2,3") or a range notation (e.g., "10-20").
@@ -58,7 +58,7 @@ Example:
 
 ```sh
 $ nepub xxxx
-novel_id: xxxx, illustration: False, tcy: False, output: xxxx.epub, kakuyomu: False
+novel_id: xxxx, illustration: False, tcy: True, output: xxxx.epub, kakuyomu: False
 cover_jpeg: None
 xxxx.epub found. Loading metadata for update.
 3 episodes found.

@@ -109,14 +109,14 @@ cat "$CSV_FILE" | grep -v -e '^[[:space:]]*$' -e '^\s*#' | while IFS=, read -r c
     # "小説ID" の先頭がアルファベットで始まっている場合は「narou」
     if [[ "$param1" =~ ^[[:alpha:]] ]]; then
         # nepub コマンド (narou)
-        command_line="nepub -i -t"
+        command_line="nepub -i"
         sub_folder=n/
 
         # 出力ファイル名: "./epub_data/タイトル_小説ID.epub"
         output_file="${EPUB_DIR}${sub_folder}${param2}_${param1}.epub"
     else
         # nepub コマンド (kakuyomu)
-        command_line="nepub -k -t"
+        command_line="nepub -k"
         sub_folder=k/
 
         # 出力ファイル名: "./epub_data/タイトル_kakuyomu.epub"

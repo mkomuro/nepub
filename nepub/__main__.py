@@ -28,7 +28,7 @@ def main():
         action="store_true",
     )
     parser.add_argument(
-        "-t", "--tcy", help="Enable Tate-Chu-Yoko conversion", action="store_true"
+        "--no-tcy", help="Disable Tate-Chu-Yoko conversion", action="store_true"
     )
     parser.add_argument(
         "-r",
@@ -85,7 +85,13 @@ def main():
         cover_jpeg_w_theme = None
 
     convert_narou_to_epub(
-        args.novel_id, args.illustration, args.tcy, args.range, output, args.kakuyomu, cover_jpeg_w_theme
+        args.novel_id,
+        args.illustration,
+        not args.no_tcy,
+        args.range,
+        output,
+        args.kakuyomu,
+        cover_jpeg_w_theme
     )
 
 
@@ -313,6 +319,9 @@ def convert_narou_to_epub(
         with zipfile.ZipFile(
             tmp_file, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9
         ) as zf_new:
+            zf_new.writestr(
+                "mimetype", "application/epub+zip", compress_type=zipfile.ZIP_STORED
+            )
             unique_images: List[MetadataImage] = []
             image_md5s = set()
             for image in images:
@@ -344,7 +353,6 @@ def convert_narou_to_epub(
                                 zf_new.writestr(
                                     f"src/text/{episode['id']}.xhtml", f.read()
                                 )
-            zf_new.writestr("mimetype", "application/epub+zip")
             zf_new.writestr("META-INF/container.xml", container())
             zf_new.writestr("src/style.css", style())
             zf_new.writestr(

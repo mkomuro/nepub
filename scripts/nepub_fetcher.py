@@ -73,12 +73,12 @@ def main():
                     # --- コマンド組み立て ---
                     if col1[0].isalpha():
                         # 小説IDが英字で始まる場合 (なろう)
-                        base_cmd = ["nepub", "-i", "-t"]
+                        base_cmd = ["nepub", "-i"]
                         sub_folder = "n"
                         output_filename = f"{col2}_{col1}.epub"
                     else:
                         # 小説IDが数字で始まる場合 (カクヨム)
-                        base_cmd = ["nepub", "-k", "-t"]
+                        base_cmd = ["nepub", "-k"]
                         sub_folder = "k"
                         output_filename = f"{col2}_kakuyomu.epub"
 
