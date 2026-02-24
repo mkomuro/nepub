@@ -92,7 +92,7 @@ Updated xxxx.epub.
 #  -c                    Inserts a generated JPEG image into the EPUB file as a cover page (named 
 #                        'cover.jpg' with the 'brown' color theme).
 
-nepub -i -t -c <novel_id>
+nepub -i -c <novel_id>
 ```
 
 `-c` オプションで下記のサンプル画像のような表紙を挿入します。表紙の「タイトル」と「作者名」は Web から取得したのものがそのまま埋め込まれます。
@@ -167,7 +167,7 @@ JPEG image data
 #                        Inserts the specified JPEG image (or specified <color_theme> JPEG image) 
 #                        into the EPUB file as a cover page.
 
-nepub -i -t --cover <color_theme> <novel_id>
+nepub -i --cover <color_theme> <novel_id>
 ```
 
 **色テーマ見本**： `brown` が上記サンプル表紙画像のデフォルト色です。（ `-c` 指定時と同じ色）
@@ -261,7 +261,7 @@ nepub -i -t --cover <color_theme> <novel_id>
 #                        Inserts the specified JPEG image (or specified <color_theme> JPEG image) 
 #                        into the EPUB file as a cover page.
 
-nepub -i -t --cover <jpeg_file> <novel_id>
+nepub -i --cover <jpeg_file> <novel_id>
 ```
 
 
@@ -296,7 +296,7 @@ python -m nepub.cover \
 
 生成した JPEG 表紙画像を `--cover` オプションの引数として指定すると、その画像が EPUB ファイルの表紙として挿入されます。
 ```sh
-nepub -i -t --cover "size-A6-short-cover.jpg" -o "小説のタイトル名.epub" <novel_id>
+nepub -i --cover "size-A6-short-cover.jpg" -o "小説のタイトル名.epub" <novel_id>
 ```
 
 ## 免責事項
