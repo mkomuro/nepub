@@ -45,7 +45,12 @@ class KakuyomuIndexParser(HTMLParser):
                 state[work["author"]["__ref"]]["activityName"]
             ).strip()
 
-            tocs = work["tableOfContents"]
+            # Kakuyomuの内部データ名は、旧形式のtableOfContentsから
+            # 現行形式のtableOfContentsV2へ変更されている。
+            tocs = work.get("tableOfContents") or work.get("tableOfContentsV2")
+            if tocs is None:
+                raise KeyError("tableOfContents/tableOfContentsV2")
+
             for toc in tocs:
                 toc_chapter_ref = toc["__ref"]
                 toc_chapter = state[toc_chapter_ref]
