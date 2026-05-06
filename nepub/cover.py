@@ -132,6 +132,35 @@ class CoverGenerator:
                 img = img.convert("RGB")
             return self._image_to_bytes_with_jpeg_metadata(img)
 
+    def _wrap_text_by_delimiter(
+        self,
+        text: str,
+        font,
+        max_width: int,
+        delimiter: str = "|",
+    ) -> str:
+        """
+        delimiter で文字列を分割し、各要素を 1 行として扱う。
+        各要素が長すぎる場合は、既存の _wrap_text() で追加折り返しする。
+        """
+        parts = [part.strip() for part in text.split(delimiter)]
+        parts = [part for part in parts if part]
+
+        if not parts:
+            return ""
+
+        lines: list[str] = []
+
+        for part in parts:
+            wrapped_part = self._wrap_text(part, font, max_width)
+            lines.extend(
+                line.strip()
+                for line in wrapped_part.splitlines()
+                if line.strip()
+            )
+
+        return "\n".join(lines)
+
     def _generate_cover_jpeg(self, title: str, author: str, base_color: tuple, text_color: tuple) -> bytes:
         """タイトルと作者名を描画した表紙画像を生成"""
         title = self._truncate_text_full(title)
@@ -154,7 +183,8 @@ class CoverGenerator:
         )
 
         # テキスト折り返し
-        wrapped_title = self._wrap_text(title, font, w)
+        # removed - wrapped_title = self._wrap_text(title, font, w)
+        wrapped_title = self._wrap_text_by_delimiter(title, font, w, delimiter="|")
         wrapped_author = self._wrap_text(author, font, w)
 
         # 描画位置
