@@ -1,6 +1,5 @@
 nepub.egg-info/
 build/
 .vscode/
-scripts/test/
 *.pyc
 *.epub
