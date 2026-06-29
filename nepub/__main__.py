@@ -213,7 +213,6 @@ def convert_narou_to_epub(
     title = index_parser.title
     author = index_parser.author
     next_page = index_parser.next_page
-    timestamp = datetime.datetime.now().astimezone().isoformat(timespec="seconds")
     chapters = index_parser.chapters
     while next_page is not None:
         index_parser.reset()
@@ -312,6 +311,15 @@ def convert_narou_to_epub(
 
     print(f"Download is complete! (new: {downloaded_count}, skipped: {skipped_count})")
 
+    if metadata and downloaded_count == 0:
+        old_episode_ids = set(metadata["episodes"].keys())
+        new_episode_ids = set(new_metadata["episodes"].keys())
+        if old_episode_ids == new_episode_ids:
+            print(f"No updates found. Kept existing {output}.")
+            return
+
+    timestamp = datetime.datetime.now().astimezone().isoformat(timespec="seconds")
+
     with tempfile.NamedTemporaryFile(
         prefix=output, dir=os.getcwd(), delete=False
     ) as tmp_file:
@@ -369,8 +377,7 @@ def convert_narou_to_epub(
             zf_new.writestr("src/metadata.json", json.dumps(new_metadata))
 
     if os.path.exists(output):
-        os.remove(output)
-        os.rename(tmp_file_name, output)
+        os.replace(tmp_file_name, output)
         print(f"Updated {output}.")
     else:
         os.rename(tmp_file_name, output)
